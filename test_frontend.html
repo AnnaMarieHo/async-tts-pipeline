@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pure TTS Stream & Cancel Tester</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #131722; color: #fff; padding: 40px; display: flex; justify-content: center; }
+        .card { background: #1c2030; padding: 30px; border-radius: 12px; width: 100%; max-width: 500px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        textarea { width: 100%; box-sizing: border-box; padding: 12px; background: #24293f; color: white; border: 1px solid #3b4260; border-radius: 6px; resize: vertical; font-size: 14px; }
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        button { flex: 1; padding: 14px; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; transition: background 0.2s; }
+        #play-btn { background: #ff5722; color: white; }
+        #play-btn:hover { background: #f4511e; }
+        #cancel-btn { background: #e53935; color: white; } /* FIXED: Removed display:none so it's always there */
+        #cancel-btn:hover { background: #d32f2f; }
+        #status { display: block; margin-top: 20px; padding: 15px; background: #131722; border-radius: 6px; text-align: center; color: #ffa500; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🎙️ Live Pipeline Audio Stream</h2>
+    <p style="color: #8a94b4; font-size: 14px;">Bypasses UI wrappers to speak directly to <code>localhost:8000</code></p>
+    
+    <label style="display:block; margin: 15px 0 5px; font-weight: bold;">Input Prompt</label>
+    <textarea id="prompt" rows="5" placeholder="Type a long text block to test batching concurrency..."></textarea>
+    
+    <div class="btn-group">
+        <button id="play-btn">Stream Audio</button>
+        <button id="cancel-btn">🛑 Cancel Stream</button>
+    </div>
+    <span id="status">Ready</span>
+</div>
+
+<script>
+    let audioCtx = null;
+    let nextStartTime = 0;
+    let ws = null;
+    let scheduledSources = []; 
+
+    const playBtn = document.getElementById('play-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const status = document.getElementById('status');
+
+    playBtn.onclick = () => {
+        const text = document.getElementById('prompt').value.trim();
+
+        if (!text) {
+            status.innerText = "⚠️ Enter a prompt first!";
+            return;
+        }
+
+        status.innerText = "📡 Connecting to WebSocket...";
+
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        }
+        nextStartTime = audioCtx.currentTime;
+        scheduledSources = [];
+
+        if (ws) ws.close();
+        
+        ws = new WebSocket("ws://127.0.0.1:8000/stream-audio");
+
+        ws.onopen = () => {
+            status.innerText = "⚡ Connected. Sent Text to Pipeline!";
+            ws.send(JSON.stringify({ "prompts": [text] }));
+        };
+
+        ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+            if (msg.audio_data) {
+                status.innerText = "🔊 Playing chunks in real-time...";
+                
+                let binary = atob(msg.audio_data);
+                let bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                
+                let int16 = new Int16Array(bytes.buffer);
+                let float32 = new Float32Array(int16.length);
+                for (let i = 0; i < int16.length; i++) {
+                    float32[i] = int16[i] / 32768.0;
+                }
+
+                let buffer = audioCtx.createBuffer(1, float32.length, 16000);
+                buffer.getChannelData(0).set(float32);
+
+                let source = audioCtx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(audioCtx.destination);
+
+                if (nextStartTime < audioCtx.currentTime) {
+                    nextStartTime = audioCtx.currentTime;
+                }
+                source.start(nextStartTime);
+                nextStartTime += buffer.duration;
+
+                scheduledSources.push(source);
+            }
+        };
+
+        ws.onclose = () => {
+            status.innerText = "✅ Done! Stream closed.";
+        };
+
+        ws.onerror = () => {
+            status.innerText = "❌ Error connecting.";
+        };
+    };
+
+    cancelBtn.onclick = () => {
+        status.innerText = "🛑 Cancellation triggered. Halting...";
+        
+        // 1. Drop the socket instantly to trigger the backend disconnect catch block
+        if (ws) {
+            ws.close();
+        }
+
+        // 2. Clear out whatever audio is currently making noise in the browser right now
+        scheduledSources.forEach(source => {
+            try { source.stop(); } catch(e) {}
+        });
+        scheduledSources = [];
+    };
+</script>
+
+</body>
+</html>
