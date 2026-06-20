@@ -1,4 +1,4 @@
-An asynchronous text-to-speech streaming pipeline built with FastAPI and asyncio. Rather than using SSE patterns, this project uses a state-locked, concurrent architecture leveraging httpx and asyncio.gather for minimal Time-To-First-Byte (TTFB). Features include sentence-based batching, real-time audio chunk serialization, and proactive network-layer task cancellation to optimize API quota and resource usage
+An asynchronous text-to-speech streaming pipeline built with FastAPI and asyncio. Rather than using server-sent-event (SSE) patterns, this project uses a state-locked, concurrent architecture leveraging httpx and asyncio.gather for minimal Time-To-First-Byte (TTFB) and near immediate cancellation feedback. Features include sentence-based batching, real-time audio chunk serialization, and proactive network-layer task cancellation to optimize API quota and resource usage
 
 <h4>Project Overview</h4>
 This service pursues low-latency, streaming TTS by optimizing the synthesis-to-playback lifecycle. 
