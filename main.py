@@ -58,7 +58,7 @@ async def stream_audio(websocket: WebSocket):
                         await websocket.send_json({
                             "job_id": event.job_id,
                             "batch": finished_batch["batch"],
-                            "audio_data": b64_audio  # Send the playable data up!
+                            "audio_data": b64_audio
                         })
                     current_batch_idx += 1
 
