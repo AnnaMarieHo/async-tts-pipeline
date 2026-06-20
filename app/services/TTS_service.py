@@ -11,7 +11,7 @@ VOICE_ID = os.getenv("VOICE_ID")
 ELEVENLABS_SEMAPHORE = asyncio.Semaphore(2)
 
 
-async def fetch_data_with_retry(seq_id, text):
+async def fetch_data_with_retry(seq_id: int, text: str):
     retries = 3
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}/stream"
 
@@ -55,31 +55,3 @@ async def fetch_data_with_retry(seq_id, text):
                 except Exception as e:
                     if attempt == retries - 1:
                         raise e
-
-
-async def stream_batch(batches):
-    for batch_id, batch in enumerate(batches):
-        print("batch_id:", batch_id)
-        print("batch:", batch)
-
-        tasks = [
-            asyncio.create_task(fetch_data_with_retry(seq_id, text))
-            for seq_id, text in enumerate(batch)
-        ]
-
-        try:
-            completed_batch_results = await asyncio.gather(*tasks)
-            completed_batch_results.sort(key=lambda item: item['seq_id'])
-            yield {
-                "batch_id": batch_id,
-                "batch": batch,
-                "data": completed_batch_results
-            }
-        except asyncio.CancelledError:
-            print(f"[BATCH CANCEL] Generator interrupted. Force-cancelling {len(tasks)} running workers.")
-            for t in tasks:
-                if not t.done():
-                    t.cancel()
-            # Wait for tasks to clear out so semaphores release cleanly
-            await asyncio.gather(*tasks, return_exceptions=True)
-            raise

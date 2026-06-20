@@ -1,7 +1,7 @@
 import asyncio
 import websockets
 import json
-from app.utils.prompts import tts_prompt1, tts_prompt2
+from app.test_scripts.prompts import tts_prompt1, tts_prompt2
 
 
 async def test_stream():
