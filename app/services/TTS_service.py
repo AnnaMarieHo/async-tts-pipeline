@@ -15,6 +15,7 @@ ELEVENLABS_SEMAPHORE = asyncio.Semaphore(2)
 
 async def fetch_data_with_retry(seq_id: int, text: str) -> FullAudio:
     retries = 3
+    last_exception = None
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}/stream"
 
     headers = {
@@ -57,3 +58,7 @@ async def fetch_data_with_retry(seq_id: int, text: str) -> FullAudio:
                 except Exception as e:
                     if attempt == retries - 1:
                         raise e
+
+    if last_exception:
+        raise last_exception
+    raise Exception(f"Failed to fetch data for seq_id {seq_id} after {retries} attempts.")

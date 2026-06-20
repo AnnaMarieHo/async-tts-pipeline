@@ -56,7 +56,6 @@ async def stream_batch(batches: list[list[str]]) -> AsyncIterator[BatchResult]:
 async def process_and_stream(websocket : WebSocket, event_queue: EventQueue, queue_notifier: QueueNotifier) -> None:
     async with stream_exception_handler(event_queue) as ctx:
         while True:
-
             if event_queue.get_length() == 0:
                 await queue_notifier.wait()
                 queue_notifier.clear()
