@@ -6,6 +6,7 @@ The architecture utilizes State-Locked Cancellation via native asyncio.Task prop
 ElevenLabs HTTP network connections are severed the millisecond a WebSocket disconnect event occurs.
 
 <h4>Current Engineering Features</h4>
+
 **Concurrent Pipelining:** Uses asyncio.gather and Semaphore(2) to concurrently fetch audio chunks for batched sentences, reducing the total time to process a multi-sentence paragraph while maintaining strict output order.
 
 **State-Locked Cancellation:** Decouples network I/O from execution logic. When a client disconnects, the event loop injects a CancelledError that propagates through the task group, triggering an immediate termination of the underlying httpx socket.
@@ -16,7 +17,11 @@ ElevenLabs HTTP network connections are severed the millisecond a WebSocket disc
 </br>
 </br>
 <h4>Tech Stack</h4>
+
 **Core:** Python 3.12+, FastAPI, Asyncio</br>
+
 **Networking:** httpx.AsyncClient (replaces legacy SDK wrappers for granular socket control)</br>
+
 **Synthesis:** ElevenLabs API (/v1/text-to-speech/{voice_id}/stream)</br>
+
 **Concurrency:** Structured Task Groups (asyncio.gather), Semaphores for rate-limiting.
