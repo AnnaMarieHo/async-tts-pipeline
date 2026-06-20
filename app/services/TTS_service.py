@@ -2,7 +2,9 @@ import asyncio
 import time
 import os
 import httpx
+from app.objects.types import FullAudio
 from dotenv import load_dotenv
+
 
 load_dotenv()
 
@@ -11,7 +13,7 @@ VOICE_ID = os.getenv("VOICE_ID")
 ELEVENLABS_SEMAPHORE = asyncio.Semaphore(2)
 
 
-async def fetch_data_with_retry(seq_id: int, text: str):
+async def fetch_data_with_retry(seq_id: int, text: str) -> FullAudio:
     retries = 3
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}/stream"
 
@@ -46,7 +48,7 @@ async def fetch_data_with_retry(seq_id: int, text: str):
 
                         print(f"[TTFB] {t2 - t1}")
                         print(f"[API] seq_id {seq_id} successfully serialized ({len(final_audio)} bytes).")
-                        return {"seq_id": seq_id, "audio": final_audio}
+                        return FullAudio(seq_id=seq_id, audio=final_audio)
 
                 except asyncio.CancelledError:
                     #  intercept the millisecond the websocket drops mid-stream

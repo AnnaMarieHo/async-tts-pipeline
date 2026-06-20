@@ -8,6 +8,6 @@ def chunk_by_sentence(text: str) -> list[str]:
 def batch_text(chunks: list[str], batch_size: int) -> list[list[str]]:
     return [chunks[i:i+batch_size] for i in range(0, len(chunks), batch_size)]
 
-def received_text(text: str):
+def received_text(text: str) -> None:
     print(text)
 
