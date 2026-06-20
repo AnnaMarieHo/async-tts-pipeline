@@ -8,6 +8,7 @@ An asynchronous text-to-speech (TTS) streaming pipeline built with FastAPI and a
 * Run the server from the root directory:
   ```bash
   uvicorn main:app --reload
+* Open `test_frontend.html` and submit a query for streamed audio
   
 ### Testing
 
