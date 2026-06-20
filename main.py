@@ -3,8 +3,8 @@ import json
 import base64
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from app.utils.batching import chunk_by_sentence, batch_text
-from app.TTS_service import stream_batch
-from app.objects.EventObjects import EventQueue
+from app.services.TTS_service import stream_batch
+from app.objects.EventQueue import EventQueue
 
 app = FastAPI()
 @app.get("/")
